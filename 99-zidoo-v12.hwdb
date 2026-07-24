@@ -1,0 +1,73 @@
+# Zidoo V12 Bluetooth remote scan-code -> keycode mapping
+#
+# Verified on:
+#   - Ugoos AM6B+ / CoreELEC 22 "Omega+" / Kodi 22 "Piers"
+#   - Zidoo V12 remote, Vendor=5A44 Product=5A44, Bluetooth (Bus=0005)
+#
+# Install to:  /storage/.config/hwdb.d/99-zidoo-v12.hwdb
+# Activate:    systemd-hwdb update && udevadm trigger --subsystem-match=input --action=change
+# Then unpair/repair the V12 in bluetoothctl for a fresh evaluation.
+#
+# hwdb syntax:
+#   - Header comments (like this one) are allowed only OUTSIDE match blocks.
+#   - The match line ("evdev:...") is not indented.
+#   - All KEYBOARD_KEY_* lines below it must start with a single space AND must
+#     be contiguous: no blank lines, no comment lines, no trailing "# ..."
+#     comments after the value. Any of those terminate the match block and
+#     orphan every remaining property line.
+#   - Values on the right of "=" must be a valid kernel key name from
+#     linux/input-event-codes.h, lowercase, without the KEY_ prefix.
+#
+# Physical layout for reference:
+#   700b6=Power  700b7=Source
+#   c0069=Red  c006a=Green  c006b=Blue  7009a=DisplayOut
+#   c01bd=Information  c00bc=Loop  c00b7=Stop  c006d=DisplayMode
+#   c00b4=Rewind  c00cd=Play/Pause  c00b3=FastForward
+#   70045=Menu  70052=Up  c0223=Home  70050=Left  c0041=OK  7004f=Right
+#   c0224=Return  70051=Down  70065=PopupMenu
+#   c00e9=Vol+  7003a=Subtitles  7004b=PageUp  c01b7=Audio
+#   c00ea=Vol-  c00e2=Mute  7004e=PageDown
+#   7001e=1  7001f=2  70020=3  70027=0  70021=4  70022=5  70023=6
+#   7002a=Backspace  70024=7  70025=8  70026=9
+
+evdev:input:b0005v5A44p5A44*
+ KEYBOARD_KEY_700b6=power
+ KEYBOARD_KEY_700b7=screen
+ KEYBOARD_KEY_c0069=red
+ KEYBOARD_KEY_c006a=green
+ KEYBOARD_KEY_c006b=blue
+ KEYBOARD_KEY_7009a=video
+ KEYBOARD_KEY_c01bd=info
+ KEYBOARD_KEY_c00bc=media_repeat
+ KEYBOARD_KEY_c00b7=stopcd
+ KEYBOARD_KEY_c006d=zoom
+ KEYBOARD_KEY_c00b4=rewind
+ KEYBOARD_KEY_c00cd=playpause
+ KEYBOARD_KEY_c00b3=fastforward
+ KEYBOARD_KEY_70045=menu
+ KEYBOARD_KEY_70052=up
+ KEYBOARD_KEY_c0223=homepage
+ KEYBOARD_KEY_70050=left
+ KEYBOARD_KEY_c0041=enter
+ KEYBOARD_KEY_7004f=right
+ KEYBOARD_KEY_c0224=back
+ KEYBOARD_KEY_70051=down
+ KEYBOARD_KEY_70065=compose
+ KEYBOARD_KEY_c00e9=volumeup
+ KEYBOARD_KEY_7003a=subtitle
+ KEYBOARD_KEY_7004b=pageup
+ KEYBOARD_KEY_c01b7=audio
+ KEYBOARD_KEY_c00ea=volumedown
+ KEYBOARD_KEY_c00e2=mute
+ KEYBOARD_KEY_7004e=pagedown
+ KEYBOARD_KEY_7001e=1
+ KEYBOARD_KEY_7001f=2
+ KEYBOARD_KEY_70020=3
+ KEYBOARD_KEY_70027=0
+ KEYBOARD_KEY_70021=4
+ KEYBOARD_KEY_70022=5
+ KEYBOARD_KEY_70023=6
+ KEYBOARD_KEY_7002a=backspace
+ KEYBOARD_KEY_70024=7
+ KEYBOARD_KEY_70025=8
+ KEYBOARD_KEY_70026=9
