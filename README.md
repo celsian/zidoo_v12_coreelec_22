@@ -1,112 +1,120 @@
-     # Fix the Zidoo V12 Remote in CoreELEC 22
+# Fix the Zidoo V12 Remote in CoreELEC 22
 
-     ## Background
+## Background
 
-     In CoreELEC 21, the Zidoo V12 appeared as a single HID device. In CoreELEC 22, it now exposes itself as **two** devices: a keyboard **and** a mouse. To make matters worse, the keyboard node is also misclassified as a tablet. This
-      causes libinput to silently discard keypresses.
+In CoreELEC 21, the Zidoo V12 appeared as a single HID device. In CoreELEC 22, it now exposes itself as **two** devices: a keyboard **and** a mouse. To make matters worse, the keyboard node is also misclassified as a tablet,
+which causes libinput to silently discard keypresses.
 
-     The fix disables both the mouse input and the keyboard's tablet classification.
+The fix disables both the mouse input and the keyboard's tablet classification.
 
-     ---
+---
 
-     ## Steps
+## Steps
 
-     ### 1. Pair the Remote
+### 1. Pair the Remote
 
-     Connect the Zidoo V12 to your playback device via Bluetooth.
+Connect the Zidoo V12 to your playback device via Bluetooth.
 
-     ### 2. SSH into CoreELEC
+### 2. SSH into CoreELEC
 
-     - Enable SSH: Settings -> CoreELEC -> Services -> SSH -> Enable SSH
+- Enable SSH: Settings -> CoreELEC -> Services -> SSH -> Enable SSH
 
-     Default credentials:
-     
-     - **User:** `root`
-     - **Password:** `coreelec`
+Default credentials:
 
-     ### 3. Confirm Both Devices Exist
+- **User:** `root`
+- **Password:** `coreelec`
 
-     ```sh
-     cat /proc/bus/input/devices | grep -A2 "Remote-V12"
+### 3. Confirm Both Devices Exist
 
-   You should see both Remote-V12 Keyboard and Remote-V12 Mouse.
+​```sh
+cat /proc/bus/input/devices | grep -A2 "Remote-V12"
+​```
 
-   4. Install the udev Rule
+You should see both `Remote-V12 Keyboard` and `Remote-V12 Mouse`.
 
-   sh
-     mkdir -p /storage/.config/udev.rules.d
+### 4. Install the udev Rule
 
-     cat > /storage/.config/udev.rules.d/99-zidoo-v12.rules <<'EOF'
-     # Hide the V12 mouse HID interface from Kodi/libinput so air-mouse
-     # mode does not produce a cursor and does not steal input from Kodi.
-     SUBSYSTEM=="input", ATTRS{name}=="Remote-V12 Mouse", \
-       ENV{LIBINPUT_IGNORE_DEVICE}="1", \
-       ENV{ID_INPUT_MOUSE}="0", \
-       ENV{ID_INPUT}="0"
+​```sh
+mkdir -p /storage/.config/udev.rules.d
 
-     # The V12 keyboard HID descriptor also declares REL/ABS axes, which
-     # makes systemd misclassify it as a tablet. libinput then silently
-     # discards its keypresses. Force it to be treated as a plain keyboard.
-     SUBSYSTEM=="input", ATTRS{name}=="Remote-V12 Keyboard", \
-       ENV{ID_INPUT_TABLET}="0", \
-       ENV{ID_INPUT_TABLET_PAD}="0", \
-       ENV{ID_INPUT_JOYSTICK}="0", \
-       ENV{ID_INPUT_MOUSE}="0", \
-       ENV{ID_INPUT_KEYBOARD}="1", \
-       ENV{ID_INPUT_KEY}="1", \
-       ENV{ID_INPUT}="1"
-     EOF
+cat > /storage/.config/udev.rules.d/99-zidoo-v12.rules <<'EOF'
+# Hide the V12 mouse HID interface from Kodi/libinput so air-mouse
+# mode does not produce a cursor and does not steal input from Kodi.
+SUBSYSTEM=="input", ATTRS{name}=="Remote-V12 Mouse", \
+  ENV{LIBINPUT_IGNORE_DEVICE}="1", \
+  ENV{ID_INPUT_MOUSE}="0", \
+  ENV{ID_INPUT}="0"
 
-     udevadm control --reload-rules
-     udevadm trigger --subsystem-match=input --action=change
+# The V12 keyboard HID descriptor also declares REL/ABS axes, which
+# makes systemd misclassify it as a tablet. libinput then silently
+# discards its keypresses. Force it to be treated as a plain keyboard.
+SUBSYSTEM=="input", ATTRS{name}=="Remote-V12 Keyboard", \
+  ENV{ID_INPUT_TABLET}="0", \
+  ENV{ID_INPUT_TABLET_PAD}="0", \
+  ENV{ID_INPUT_JOYSTICK}="0", \
+  ENV{ID_INPUT_MOUSE}="0", \
+  ENV{ID_INPUT_KEYBOARD}="1", \
+  ENV{ID_INPUT_KEY}="1", \
+  ENV{ID_INPUT}="1"
+EOF
 
-   5. Re-pair the Remote
+udevadm control --reload-rules
+udevadm trigger --subsystem-match=input --action=change
+​```
 
-   Disconnect the Zidoo V12 from Bluetooth, then reconnect.
+### 5. Re-pair the Remote
 
-    **Note:** If the remote refuses to reconnect after disconnecting, delete the pairing entirely and pair from scratch.
+Disconnect the Zidoo V12 from Bluetooth, then reconnect.
 
-   6. Verify Device Properties
+> **Note:** If the remote refuses to reconnect after disconnecting, delete the pairing entirely and pair from scratch.
 
-   Look up the current event* numbers:
+### 6. Verify Device Properties
 
-   sh
-     cat /proc/bus/input/devices | grep -A2 "Remote-V12"
+Look up the current `event*` numbers:
 
-   Substitute the correct numbers below and check properties:
+​```sh
+cat /proc/bus/input/devices | grep -A2 "Remote-V12"
+​```
 
-   sh
-     udevadm info -q property -p /sys/class/input/eventN | grep -E 'ID_INPUT|LIBINPUT'
+Substitute the correct numbers below and check properties:
 
-   Expected output for the keyboard node:
+​```sh
+udevadm info -q property -p /sys/class/input/eventN | grep -E 'ID_INPUT|LIBINPUT'
+​```
 
-     ID_INPUT=1
-     ID_INPUT_TABLET=0
-     ID_INPUT_TABLET_PAD=0
-     ID_INPUT_KEY=1
-     ID_INPUT_KEYBOARD=1
-     ID_INPUT_JOYSTICK=0
-     ID_INPUT_MOUSE=0
+**Expected output for the keyboard node:**
 
-   Expected output for the mouse node:
+​```
+ID_INPUT=1
+ID_INPUT_TABLET=0
+ID_INPUT_TABLET_PAD=0
+ID_INPUT_KEY=1
+ID_INPUT_KEYBOARD=1
+ID_INPUT_JOYSTICK=0
+ID_INPUT_MOUSE=0
+​```
 
-     ID_INPUT=0
-     ID_INPUT_MOUSE=0
-     ID_INPUT_KEY=1
-     LIBINPUT_IGNORE_DEVICE=1
+**Expected output for the mouse node:**
 
-   7. Create the HWDB File
+​```
+ID_INPUT=0
+ID_INPUT_MOUSE=0
+ID_INPUT_KEY=1
+LIBINPUT_IGNORE_DEVICE=1
+​```
 
-   sh
-     nano /storage/.config/hwdb.d/99-zidoo-v12.hwdb
+### 7. Create the HWDB File
 
-   Paste the contents from the raw file here:
+​```sh
+nano /storage/.config/hwdb.d/99-zidoo-v12.hwdb
+​```
 
-   99-zidoo-v12.hwdb
+Paste the contents from [99-zidoo-v12.hwdb](./99-zidoo-v12.hwdb).
 
-   8. Apply the HWDB and Restart Kodi
+### 8. Apply the HWDB and Restart Kodi
 
-   sh
-     systemd-hwdb update
-     udevadm trigger --subsystem-match=input --action=change
-     systemctl restart kodi
+​```sh
+systemd-hwdb update
+udevadm trigger --subsystem-match=input --action=change
+systemctl restart kodi
+​```
